@@ -2,7 +2,7 @@ import pandas as pd, os
 from sklearn.model_selection import train_test_split
 
 df = pd.read_csv("merged.csv", encoding="utf-8-sig")
-print("Rows (pehle):", len(df))
+print("Rows (First):", len(df))
 
 
 df = df.dropna(subset=["text", "label"])
@@ -13,7 +13,7 @@ df = df[df["text"].str.len() > 2]
 n = df.groupby("text")["label"].nunique()
 df = df[~df["text"].isin(n[n > 1].index)]   
 df = df.drop_duplicates(subset="text")
-print("Rows (baad me):", len(df))
+print("Rows (After Cleaning):", len(df))
 print(df["label"].value_counts())
 
 # 80/20 split
