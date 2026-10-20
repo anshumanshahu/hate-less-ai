@@ -140,7 +140,8 @@ Planned: more clean Hinglish examples, a rule-based word filter, and retraining.
 
 - [x] Text classifier (Hinglish, Hindi, English)
 - [x] Threshold tuning and reject / clean flow
-- [ ] Retrain with more clean Hinglish data
+- [ ] Collect Images and train model 
 - [ ] Image moderation (nudity, gore, offensive gestures)
 - [ ] OCR for text inside images
-- [ ] Database and review queue integration
+- [ ] Making the small web app for using FastAPI
+
