@@ -41,7 +41,7 @@ Precision and recall at different thresholds:
 
 ```
 hate-less-ai/
-├── files/              # original dataset files (not included in the repo)
+├── files/              # original dataset files
 ├── data/
 │   ├── train.csv       # 80% of the data
 │   └── test.csv        # 20% of the data
