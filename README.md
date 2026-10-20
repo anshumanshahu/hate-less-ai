@@ -60,7 +60,7 @@ hate-less-ai/
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/<your-username>/hate-less-ai.git
+https://github.com/anshumanshahu/hate-less-ai.git
 cd hate-less-ai
 ```
 
