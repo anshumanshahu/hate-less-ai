@@ -143,5 +143,5 @@ Planned: more clean Hinglish examples, a rule-based word filter, and retraining.
 - [ ] Collect Images and train model 
 - [ ] Image moderation (nudity, gore, offensive gestures)
 - [ ] OCR for text inside images
-- [ ] Making the small web app for using FastAPI
+- [ ] Making the small web app using FastAPI
 
