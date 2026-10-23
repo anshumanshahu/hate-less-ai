@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Content Moderation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap bar">
+      <h1>Content Moderation</h1>
+      <div class="services">
+        <span id="status-text" class="svc">Text service: checking</span>
+        <span id="status-image" class="svc">Image service: checking</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tabs" role="tablist">
+      <button id="tab-text" role="tab" aria-selected="true">Text</button>
+      <button id="tab-image" role="tab" aria-selected="false">Image</button>
+    </div>
+
+    <section id="panel-text">
+      <label for="text-input">Text to check</label>
+      <textarea id="text-input" placeholder="English, Hindi or Hinglish"></textarea>
+      <button id="btn-text" class="primary">Check text</button>
+    </section>
+
+    <section id="panel-image" hidden>
+      <label for="file-input">Image to check</label>
+      <div class="file-row">
+        <label for="file-input" class="file-btn">Choose image</label>
+        <span id="file-name">No file selected</span>
+        <input type="file" id="file-input" accept="image/*">
+      </div>
+      <img id="preview" alt="Selected image">
+      <button id="btn-image" class="primary">Check image</button>
+    </section>
+
+    <div id="result" hidden></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
