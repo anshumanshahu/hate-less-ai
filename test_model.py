@@ -19,7 +19,7 @@ def check_text(text):
         return "REVIEW", p
     return "CLEAN", p
 
-print("Text daalo (band karne ke liye 'q' likho)\n")
+print("Enter Text)\n")
 while True:
     text = input("> ").strip()
     if text.lower() == "q":
