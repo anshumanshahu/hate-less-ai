@@ -13,8 +13,8 @@ CANDIDATES = [
     ("gray", "eng", 6),
     ("gray", "eng+hin", 6),
     ("gray", "hin", 6),
-    ("inverted", "eng", 6),   # light text on dark background
-    ("gray", "eng", 11),      # scattered text, e.g. memes
+    ("inverted", "eng", 6),   
+    ("gray", "eng", 11),      
 ]
 
 
