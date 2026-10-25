@@ -1,0 +1,25 @@
+services:
+  text-service:
+    build: ./text_service
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  image-service:
+    build: ./image_service
+    ports:
+      - "8002:8002"
+    environment:
+      - TEXT_SERVICE_MANY_URL=http://text-service:8001/check-text-many
+    depends_on:
+      - text-service
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5500:80"
+    depends_on:
+      - text-service
+      - image-service
+    restart: unless-stopped

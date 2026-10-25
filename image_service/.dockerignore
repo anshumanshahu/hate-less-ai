@@ -1,0 +1,11 @@
+venv/
+img_venv/
+__pycache__/
+raw_images/
+images/
+data/
+files/
+*.npz
+*.csv
+merged.csv
+clip-local/
