@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+files/
+data/
+merged.csv
+*.csv
