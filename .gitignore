@@ -7,3 +7,5 @@ img_feats.npz
 image_model.pkl
 images/
 test/
+feats_test.npz
+feats_train.npz
