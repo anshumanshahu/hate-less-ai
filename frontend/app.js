@@ -148,13 +148,17 @@ $("#btn-image").addEventListener("click", async () => {
     const textResult = data.ocr.result;
     const textStatus = textResult && textResult.status;
 
+    // reason: jo cheez asal me reject/review ki wajah hai, wahi batao
     let reason = "No issue found in the image or the text inside it.";
-    if (img.status !== "clean") reason = "Image flagged as " + pretty(img.label) + ".";
-    else if (textStatus === "reject" || textStatus === "review") reason = "Text inside the image was flagged.";
+    if (img.status !== "clean") {
+      reason = "Image flagged as " + pretty(img.label) + ".";
+    } else if (textStatus === "reject" || textStatus === "review") {
+      reason = "Text inside the image was flagged.";
+    }
 
     const imageDetail = img.status === "clean"
       ? "Looks safe"
-      : pretty(img.label) + " (" + percent(img.unsafe_score) + ")";
+      : pretty(img.label) + " (" + percent(img.unsafe_score) + ", reject at " + percent(img.reject_threshold) + ")";
 
     let textCell = make("span", "", "No readable text");
     let textDetail = "";
