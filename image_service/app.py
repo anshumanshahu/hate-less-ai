@@ -13,8 +13,13 @@ from ocr import extract_text, available_langs
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 TEXT_MANY_URL = os.getenv("TEXT_SERVICE_MANY_URL", "http://127.0.0.1:8001/check-text-many")
-REJECT_TH, REVIEW_TH = 0.80, 0.50
-MIN_OCR_WORDS = 3          # ignore OCR output with fewer words (usually noise)
+
+
+CLASS_REJECT_TH = {"explicit": 0.60, "hate_symbol": 0.70, "offensive_gesture": 0.60}
+DEFAULT_REJECT_TH = 0.80
+REVIEW_TH = 0.50
+
+MIN_OCR_WORDS = 3          
 CHUNK_WORDS, CHUNK_STEP = 8, 4
 
 MODEL = "openai/clip-vit-base-patch32"
@@ -44,7 +49,7 @@ def classify(img):
 
 
 def word_chars(token):
-    # letters, digits and combining marks (needed for Devanagari matras)
+    
     return sum(ch.isalnum() or unicodedata.category(ch).startswith("M") for ch in token)
 
 
@@ -78,11 +83,13 @@ def check_image(file: UploadFile = File(...)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
-    # 1. image classification
+    
     probs = classify(img)
     unsafe = float(1 - probs["safe"])
     top = max((c for c in probs if c != "safe"), key=lambda c: probs[c])
-    if unsafe >= REJECT_TH:
+    reject_th = CLASS_REJECT_TH.get(top, DEFAULT_REJECT_TH)
+
+    if unsafe >= reject_th:
         img_status = "reject"
     elif unsafe >= REVIEW_TH:
         img_status = "review"
@@ -116,6 +123,7 @@ def check_image(file: UploadFile = File(...)):
             "label": top if img_status != "clean" else "safe",
             "unsafe_score": round(unsafe, 4),
             "scores": {c: round(float(p), 4) for c, p in probs.items()},
+            "reject_threshold": reject_th,
         },
         "ocr": {"text": text, "result": text_res},
     }

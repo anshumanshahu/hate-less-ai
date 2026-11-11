@@ -42,22 +42,24 @@ def extract(paths, labels, bs=32):
         print(f"{min(i + bs, len(paths))}/{len(paths)}", end="\r")
     return np.vstack(X), np.array(y)
 
-if not os.path.exists("img_feats.npz"):
-    ptr, ltr, classes = list_files("train")
-    pte, lte, _ = list_files("test")
-    Xtr, ytr = extract(ptr, ltr)
-    Xte, yte = extract(pte, lte)
-    np.savez("img_feats.npz", Xtr=Xtr, ytr=ytr, Xte=Xte, yte=yte, classes=classes)
 
-d = np.load("img_feats.npz")
-classes = [str(c) for c in d["classes"]]
+for part in ["train", "test"]:
+    fn = f"feats_{part}.npz"
+    if not os.path.exists(fn):
+        paths, labels, classes = list_files(part)
+        X, y = extract(paths, labels)
+        np.savez(fn, X=X, y=y, classes=classes)
+        print(f"\nSaved {fn}")
+
+tr, te = np.load("feats_train.npz"), np.load("feats_test.npz")
+classes = [str(c) for c in tr["classes"]]
 
 clf = LogisticRegression(max_iter=1000, class_weight="balanced", C=2.0)
-clf.fit(d["Xtr"], d["ytr"])
-pred = clf.predict(d["Xte"])
+clf.fit(tr["X"], tr["y"])
+pred = clf.predict(te["X"])
 
-print(classification_report(d["yte"], pred, target_names=classes, digits=3))
-print(confusion_matrix(d["yte"], pred))
+print(classification_report(te["y"], pred, target_names=classes, digits=3))
+print(confusion_matrix(te["y"], pred))
 
 joblib.dump({"clf": clf, "classes": classes}, "image_model.pkl")
 print("Saved: image_model.pkl")

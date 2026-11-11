@@ -10,7 +10,9 @@ proc = CLIPProcessor.from_pretrained(MODEL)
 bundle = joblib.load("image_model.pkl")
 clf, classes = bundle["clf"], bundle["classes"]
 
-REJECT_TH = 0.80
+
+CLASS_REJECT_TH = {"explicit": 0.60, "hate_symbol": 0.70, "offensive_gesture": 0.60}
+DEFAULT_REJECT_TH = 0.80
 REVIEW_TH = 0.50
 EXTS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif")
 
@@ -26,7 +28,8 @@ def predict(path):
 def decide(probs):
     unsafe = 1 - probs["safe"]
     top = max((c for c in probs if c != "safe"), key=lambda c: probs[c])
-    if unsafe >= REJECT_TH:
+    reject_th = CLASS_REJECT_TH.get(top, DEFAULT_REJECT_TH)
+    if unsafe >= reject_th:
         return "REJECT", top, unsafe
     if unsafe >= REVIEW_TH:
         return "REVIEW", top, unsafe

@@ -4,13 +4,22 @@ from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 SRC, DST = "raw_images", "images"
-MAX_SAFE = None       
+MAX_SAFE = None        
 random.seed(42)
 
+
+MAP = {
+    "clean": "safe",
+    "porn": "explicit",
+    "hate_symbols": "hate_symbol",
+    "middle_finger": "offensive_gesture",
+}
+
 seen, items = set(), {}
-for cls in sorted(os.listdir(SRC)):
-    folder = f"{SRC}/{cls}"
+for folder_name, cls in MAP.items():
+    folder = f"{SRC}/{folder_name}"
     if not os.path.isdir(folder):
+        print("Folder nahi mila:", folder)
         continue
     for f in os.listdir(folder):
         p = f"{folder}/{f}"
