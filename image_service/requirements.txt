@@ -26,6 +26,7 @@ networkx==3.6.1
 numpy==2.5.4
 opentelemetry-api==1.45.1
 packaging==26.3
+phonenumbers==9.0.43
 pillow==13.0.0
 pydantic==2.14.1
 pydantic_core==2.50.1
