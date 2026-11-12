@@ -9,17 +9,17 @@ from PIL import Image, ImageFile
 from transformers import CLIPModel, CLIPProcessor
 
 from ocr import extract_text, available_langs
+from pii import find_pii
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 TEXT_MANY_URL = os.getenv("TEXT_SERVICE_MANY_URL", "http://127.0.0.1:8001/check-text-many")
 
-
 CLASS_REJECT_TH = {"explicit": 0.60, "hate_symbol": 0.70, "offensive_gesture": 0.60}
 DEFAULT_REJECT_TH = 0.80
 REVIEW_TH = 0.50
 
-MIN_OCR_WORDS = 3          
+MIN_OCR_WORDS = 3
 CHUNK_WORDS, CHUNK_STEP = 8, 4
 
 MODEL = "openai/clip-vit-base-patch32"
@@ -49,18 +49,17 @@ def classify(img):
 
 
 def word_chars(token):
-    
+    # letters, digits and combining marks (Devanagari matras ke liye)
     return sum(ch.isalnum() or unicodedata.category(ch).startswith("M") for ch in token)
 
 
 def clean_ocr(text):
-    """Drop stray symbols and single characters that OCR picks up from pictures."""
+    """Stray symbols aur single characters hatao jo OCR picture se utha leta hai."""
     return " ".join(tok for tok in text.split() if word_chars(tok) >= 2)
 
 
 def make_chunks(text):
-    """Whole text plus short overlapping windows, so one abusive line is not
-    diluted by a long harmless text around it."""
+    """Poora text + chhote overlapping tukde, taaki ek abusive line lambe text me chhup na jaye."""
     words = text.split()
     pieces = [text]
     if len(words) > CHUNK_WORDS:
@@ -83,7 +82,7 @@ def check_image(file: UploadFile = File(...)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
-    
+    # 1. image classification
     probs = classify(img)
     unsafe = float(1 - probs["safe"])
     top = max((c for c in probs if c != "safe"), key=lambda c: probs[c])
@@ -96,13 +95,32 @@ def check_image(file: UploadFile = File(...)):
     else:
         img_status = "clean"
 
-    # 2. OCR, cleanup, then text service
-    raw_text, text_res = "", None
+    image_info = {
+        "status": img_status,
+        "label": top if img_status != "clean" else "safe",
+        "unsafe_score": round(unsafe, 4),
+        "scores": {c: round(float(p), 4) for c, p in probs.items()},
+        "reject_threshold": reject_th,
+    }
+
+    # 2. OCR
     try:
         raw_text = extract_text(img)
     except Exception:
         raw_text = ""
+
+    # 3. personal info (phone / email). Text response me wapas nahi jaata.
+    pii = find_pii(raw_text)
+    if pii:
+        return {
+            "status": "reject",
+            "image": image_info,
+            "ocr": {"text": "", "result": {"status": "reject", "reason": "personal_info", "types": pii}},
+        }
+
+    # 4. cleanup, then text service
     text = clean_ocr(raw_text)
+    text_res = None
     if len(text.split()) >= MIN_OCR_WORDS:
         try:
             r = httpx.post(TEXT_MANY_URL, json={"texts": make_chunks(text)}, timeout=15)
@@ -110,7 +128,7 @@ def check_image(file: UploadFile = File(...)):
         except Exception:
             text_res = {"status": "unavailable"}
 
-    # 3. final decision = the stricter of the two
+    # 5. final decision = the stricter of the two
     final = img_status
     if text_res and text_res.get("status") in RANK:
         if RANK[text_res["status"]] > RANK[final]:
@@ -118,12 +136,6 @@ def check_image(file: UploadFile = File(...)):
 
     return {
         "status": final,
-        "image": {
-            "status": img_status,
-            "label": top if img_status != "clean" else "safe",
-            "unsafe_score": round(unsafe, 4),
-            "scores": {c: round(float(p), 4) for c, p in probs.items()},
-            "reject_threshold": reject_th,
-        },
+        "image": image_info,
         "ocr": {"text": text, "result": text_res},
     }

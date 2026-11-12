@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from pii import find_pii
+
 REJECT_TH, REVIEW_TH = 0.8, 0.5
 model = joblib.load("text_model.pkl")
 
@@ -41,6 +43,13 @@ def to_status(p):
     return "clean"
 
 
+def personal_info_result(types, worst_text=None):
+    res = {"status": "reject", "probability": 1.0, "reason": "personal_info", "types": types}
+    if worst_text is not None:
+        res["worst_text"] = worst_text
+    return res
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -48,6 +57,12 @@ def health():
 
 @app.post("/check-text")
 def check_text(body: TextIn):
+    # 1. personal info pehle, ML se pehle
+    pii = find_pii(body.text)
+    if pii:
+        return personal_info_result(pii)
+
+    # 2. ML model
     clean = norm(body.text)
     if len(clean) < 2:
         return {"status": "clean", "probability": 0.0}
@@ -57,7 +72,12 @@ def check_text(body: TextIn):
 
 @app.post("/check-text-many")
 def check_text_many(body: ManyIn):
-    """Score several pieces of text and report the worst one."""
+    # koi bhi piece me personal info ho to poori request reject
+    for t in body.texts:
+        pii = find_pii(t)
+        if pii:
+            return personal_info_result(pii, worst_text="")
+
     cleaned = [c for c in (norm(t) for t in body.texts) if len(c) >= 2]
     if not cleaned:
         return {"status": "clean", "probability": 0.0, "worst_text": ""}
