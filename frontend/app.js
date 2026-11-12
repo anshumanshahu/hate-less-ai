@@ -2,6 +2,7 @@ const TEXT_API = "http://127.0.0.1:8001";
 const IMAGE_API = "http://127.0.0.1:8002";
 
 const LABELS = { clean: "Safe", review: "Needs review", reject: "Rejected" };
+const PII_REASON = "Personal information found (phone number or email).";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -119,9 +120,11 @@ $("#btn-text").addEventListener("click", async () => {
     if (!res.ok) throw new Error("status " + res.status);
     const data = await res.json();
 
-    render([
-      verdict(data.status, "Vulgar probability: " + percent(data.probability)),
-    ]);
+    const reason = data.reason === "personal_info"
+      ? PII_REASON
+      : "Vulgar probability: " + percent(data.probability);
+
+    render([verdict(data.status, reason)]);
   } catch (err) {
     showError("Could not reach the text service at " + TEXT_API + ". Make sure it is running.");
   }
@@ -147,10 +150,13 @@ $("#btn-image").addEventListener("click", async () => {
     const img = data.image;
     const textResult = data.ocr.result;
     const textStatus = textResult && textResult.status;
+    const isPII = textResult && textResult.reason === "personal_info";
 
-    // reason: jo cheez asal me reject/review ki wajah hai, wahi batao
+
     let reason = "No issue found in the image or the text inside it.";
-    if (img.status !== "clean") {
+    if (isPII) {
+      reason = PII_REASON;
+    } else if (img.status !== "clean") {
       reason = "Image flagged as " + pretty(img.label) + ".";
     } else if (textStatus === "reject" || textStatus === "review") {
       reason = "Text inside the image was flagged.";
@@ -162,7 +168,10 @@ $("#btn-image").addEventListener("click", async () => {
 
     let textCell = make("span", "", "No readable text");
     let textDetail = "";
-    if (textResult && textResult.probability !== undefined) {
+    if (isPII) {
+      textCell = chip("reject");
+      textDetail = "Phone or email found: " + textResult.types.join(", ");
+    } else if (textResult && textResult.probability !== undefined) {
       textCell = chip(textStatus);
       textDetail = "Vulgar probability " + percent(textResult.probability);
     } else if (textStatus === "unavailable") {
@@ -184,7 +193,7 @@ $("#btn-image").addEventListener("click", async () => {
       make("h2", "", "Image class scores"),
       table(["Class", "Score"], scores),
       make("h2", "", "Text found in the image"),
-      make("pre", "extracted", data.ocr.text || "Nothing found."),
+      make("pre", "extracted", isPII ? "Hidden for privacy." : (data.ocr.text || "Nothing found.")),
     ]);
   } catch (err) {
     showError("Could not check the image: " + err.message + ". Make sure the image service at " + IMAGE_API + " is running.");
